@@ -31,3 +31,4 @@ git remote add origin https://github.com/HoratiuMol/myInvestmentAlgorythm.git
 git branch -M main
 git push -u origin main
 git init
+%runfile C:/Users/horat/.spyder-py3/AlgoTest1.py --wdir
