@@ -26,8 +26,10 @@ version = 87.5.0
 prev_high_dpi_custom_scale_factors = 1
 previous_crash = 
 last_inapp_appeal = 2025-11-06
-spyder_runs_for_appeal = 2
+spyder_runs_for_appeal = 6
 window/statusbar = True
+interface_language = es
+custom_cursor_blinking = 1060
 
 [update_manager]
 check_updates_on_startup = True
@@ -47,6 +49,7 @@ cpu_usage/enable = False
 cpu_usage/timeout = 2000
 clock/enable = False
 clock/timeout = 1000
+enable = True
 
 [internal_console]
 max_line_count = 300
@@ -58,6 +61,8 @@ external_editor/path = SciTE
 external_editor/gotoline = -goto:
 window_was_undocked_before_hiding = False
 undocked_on_window_close = False
+first_time = False
+enable = True
 
 [main_interpreter]
 default = True
@@ -71,11 +76,11 @@ show_banner = True
 completion_type = 0
 show_calltips = True
 ask_before_closing = False
-show_reset_namespace_warning = True
+show_reset_namespace_warning = False
 buffer_size = 5000
 pylab = True
 pylab/autoload = False
-pylab/backend = inline
+pylab/backend = qt
 pylab/inline/figure_format = png
 pylab/inline/resolution = 144
 pylab/inline/width = 6
@@ -98,6 +103,8 @@ ask_before_restart = True
 hide_cmd_windows = True
 window_was_undocked_before_hiding = False
 undocked_on_window_close = False
+first_time = False
+enable = True
 
 [variable_explorer]
 check_all = False
@@ -114,9 +121,11 @@ show_callable_attributes = True
 show_remove_message_dataframe = True
 show_remove_message_collections = True
 show_special_attributes = False
-filter_on = True
+filter_on = False
 window_was_undocked_before_hiding = False
 undocked_on_window_close = False
+first_time = False
+enable = True
 
 [debugger]
 exclude_internal = True
@@ -127,13 +136,17 @@ pdb_use_exclamation_mark = True
 pdb_stop_first_line = True
 editor_debugger_panel = True
 breakpoints_table_visible = False
-breakpoints = {}
+breakpoints = {'c:\\users\\horat\\.spyder-py3\\algotest1.py': []}
 window_was_undocked_before_hiding = False
 undocked_on_window_close = False
+first_time = False
+enable = True
+startup/pdb_run_lines = 
 
 [run]
 save_all_before_run = True
 run_cell_copy = False
+enable = True
 
 [plots]
 mute_inline_plotting = True
@@ -141,6 +154,8 @@ show_plot_outline = False
 window_was_undocked_before_hiding = False
 save_dir = C:\Users\horat
 undocked_on_window_close = False
+first_time = False
+enable = True
 
 [editor]
 wrap = False
@@ -198,6 +213,8 @@ mouse_shortcuts = {'jump_to_position': 'Alt', 'goto_definition': 'Ctrl', 'add_re
 window_was_undocked_before_hiding = False
 undocked_on_window_close = False
 windows_layout_settings = []
+first_time = False
+enable = True
 
 [historylog]
 enable = True
@@ -206,6 +223,7 @@ go_to_eof = True
 line_numbers = False
 window_was_undocked_before_hiding = False
 undocked_on_window_close = False
+first_time = False
 
 [help]
 enable = True
@@ -221,6 +239,7 @@ show_source = False
 locked = False
 window_was_undocked_before_hiding = False
 undocked_on_window_close = False
+first_time = False
 
 [onlinehelp]
 enable = True
@@ -228,6 +247,7 @@ handle_links = False
 max_history_entries = 20
 window_was_undocked_before_hiding = False
 undocked_on_window_close = False
+first_time = False
 
 [outline_explorer]
 enable = True
@@ -241,6 +261,7 @@ display_variables = False
 show_with_maximized_editor = True
 window_was_undocked_before_hiding = False
 undocked_on_window_close = False
+first_time = False
 
 [preferences]
 enable = True
@@ -258,6 +279,8 @@ type_column = False
 search_files_in_switcher = True
 window_was_undocked_before_hiding = False
 undocked_on_window_close = False
+first_time = False
+enable = True
 
 [explorer]
 enable = True
@@ -272,6 +295,7 @@ fetch_files_display = 500
 max_files_display = 2000
 window_was_undocked_before_hiding = False
 undocked_on_window_close = False
+first_time = False
 
 [find_in_files]
 enable = True
@@ -290,6 +314,7 @@ hist_limit = 15
 path_history = []
 window_was_undocked_before_hiding = False
 undocked_on_window_close = False
+first_time = False
 
 [completions]
 enable = True
@@ -306,6 +331,7 @@ n_slow_children = 15
 window_was_undocked_before_hiding = False
 make_visible = True
 undocked_on_window_close = False
+first_time = False
 
 [pylint]
 enable = True
@@ -314,6 +340,7 @@ project_dir = None
 window_was_undocked_before_hiding = False
 first_time = False
 undocked_on_window_close = False
+save_before = True
 
 [workingdir]
 working_dir_history = 20
@@ -322,7 +349,7 @@ console/use_cwd = True
 console/use_fixed_directory = False
 startup/use_project_or_home_directory = True
 startup/use_fixed_directory = False
-history = ['C:\\Users\\horat']
+history = ['C:\\Users\\horat', 'C:\\Users\\horat\\.spyder-py3']
 
 [tours]
 enable = True
@@ -920,7 +947,15 @@ vibrant-ink/comment = ('#8146a2', False, False)
 vibrant-ink/string = ('#477488', False, False)
 vibrant-ink/number = ('#477488', False, False)
 vibrant-ink/instance = ('#357a8f', False, False)
+custom_names = []
 
 [remoteclient]
 servers = {}
+enable = True
+
+[external_terminal]
+enable = True
+
+[switcher]
+enable = True
 
