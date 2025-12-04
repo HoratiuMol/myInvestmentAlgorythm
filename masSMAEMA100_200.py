@@ -51,6 +51,10 @@ def interpret_fgi(value):
     else:
         return ("Extreme Greed", "❌ MARKET RISK: Avoid new buys. Watch for corrections.")
 
+
+def EMA(series, period):
+    return series.ewm(span=period, adjust=False).mean()
+
 # Estrategia de Cruce de Medias con filtro FGI
 class SmaCross(Strategy):
     fgi_value = 0
@@ -66,6 +70,32 @@ class SmaCross(Strategy):
         if crossover(self.ma1, self.ma2):
             self.buy()
         elif crossover(self.ma2, self.ma1):
+            self.sell()
+
+
+class MasSMAEMA_100_200(Strategy):
+    fgi_value = 0
+
+    def init(self):
+        price = self.data.Close
+        self.sma100 = self.I(SMA, price, 100)
+        self.sma200 = self.I(SMA, price, 200)
+        self.ema100 = self.I(EMA, price, 100)
+        self.ema200 = self.I(EMA, price, 200)
+
+    def next(self):
+        if self.fgi_value > 49:
+            return
+
+        bullish_trend = self.sma100 > self.sma200
+        ema_cross_up = crossover(self.ema100, self.ema200)
+        sma_cross_up = crossover(self.sma100, self.sma200)
+        ema_cross_down = crossover(self.ema200, self.ema100)
+        sma_cross_down = crossover(self.sma200, self.sma100)
+
+        if (ema_cross_up or sma_cross_up) and bullish_trend:
+            self.buy()
+        elif ema_cross_down or sma_cross_down:
             self.sell()
 
 # Función principal
