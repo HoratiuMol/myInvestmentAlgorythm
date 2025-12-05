@@ -65,3 +65,4 @@ Ctrl +
 
 ## ---(Fri Dec  5 00:39:54 2025)---
 %runfile C:/Users/horat/.spyder-py3/AlgoTest1.py --wdir
+%runfile C:/Users/horat/.spyder-py3/masSMAEMA100_200.py --wdir

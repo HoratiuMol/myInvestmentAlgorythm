@@ -1,110 +1,115 @@
 import yfinance as yf
+import pandas as pd
 from datetime import datetime
 import requests
-import matplotlib
-import webbrowser
-import pandas as pd
+
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
-from backtesting.test import SMA
-from bokeh.plotting import output_file
+from bokeh.plotting import output_file, save
 
-matplotlib.use('Qt5Agg')
+# ============================================================
+#   DESCARGA DE DATOS (CORREGIDO PARA MULTIINDEX)
+# ============================================================
+def get_data(ticker="AAPL", period="1y", interval="1d"):
+    df = yf.download(ticker, period=period, interval=interval)
 
-# Obtener datos históricos de GOOG
-def get_data(ticker="GOOG", period="1y", interval="1d"):
-    data = yf.download(ticker, period=period, interval=interval)
-    if isinstance(data.columns, pd.MultiIndex):
-        data.columns = [col[0] for col in data.columns]
-    return data
+    # Aplanar columnas si son MultiIndex
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [col[0] for col in df.columns]
 
-# Calcular la volatilidad anualizada
-def calculate_volatility(df):
-    df["returns"] = df["Close"].pct_change()
-    volatility = df["returns"].std() * (252 ** 0.5)
-    return volatility
+    df.dropna(inplace=True)
+    return df
 
-# Obtener el índice de miedo y codicia (FGI)
+
+# ============================================================
+#   INDICADORES (RSI Y EMA)
+# ============================================================
+def RSI(series, period=14):
+    series = pd.Series(series)  # Convertir a pandas Series
+    delta = series.diff()
+
+    gain = delta.where(delta > 0, 0).rolling(period).mean()
+    loss = -delta.where(delta < 0, 0).rolling(period).mean()
+
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
+
+
+def EMA(series, period):
+    series = pd.Series(series)  # Convertir a pandas Series
+    return series.ewm(span=period, adjust=False).mean()
+
+
+# ============================================================
+#   FEAR & GREED INDEX
+# ============================================================
 def get_fear_greed(api_url="https://api.alternative.me/fng/"):
     response = requests.get(api_url, params={"limit": 1})
     response.raise_for_status()
-    payload = response.json()
-    latest = payload["data"][0]
-    return {
-        "value": int(latest["value"]),
-        "classification": latest["value_classification"],
-        "timestamp": datetime.fromtimestamp(int(latest["timestamp"]))
-    }
 
-# Interpretación del FGI
-def interpret_fgi(value):
-    if value <= 5:
-        return ("BUY NOW", "✅ MARKET OPPORTUNITY: Act decisively")
-    elif value <= 20:
-        return ("Extreme Fear", "✅ MARKET OPPORTUNITY: Consider other indicators also")
-    elif value <= 49:
-        return ("Fear", "⚠️ Market is cautious. Avoid impulsive entries.")
-    elif value <= 75:
-        return ("Greed", "⚠️ Market shows greed. Be selective and protect gains.")
-    elif value <= 90:
-        return ("Consider Selling", "❌ Watch out, market overheating")
-    else:
-        return ("Extreme Greed", "❌ MARKET RISK: Avoid new buys. Watch for corrections.")
+    latest = response.json()["data"][0]
 
-# Estrategia de Cruce de Medias con filtro FGI
-class SmaCross(Strategy):
-    fgi_value = 0
+    return int(latest["value"]), latest["value_classification"], datetime.fromtimestamp(int(latest["timestamp"]))
+
+
+# ============================================================
+#   ESTRATEGIA: EMA 5/20 + RSI + FGI
+# ============================================================
+class EmaRsiStrategy(Strategy):
+    fgi_value = 0  # Filtro basado en sentimiento del mercado
 
     def init(self):
-        price = self.data.Close
-        self.ma1 = self.I(SMA, price, 10)
-        self.ma2 = self.I(SMA, price, 20)
+        close = self.data.Close
+
+        # Indicadores CORRECTAMENTE definidos
+        self.ema5 = self.I(EMA, close, 5)
+        self.ema20 = self.I(EMA, close, 20)
+        self.rsi = self.I(RSI, close, 14)
 
     def next(self):
-        if self.fgi_value > 49:
+
+        # Filtro de sentimiento (evita operar si hay codicia fuerte)
+        if self.fgi_value > 70:
             return
-        if crossover(self.ma1, self.ma2):
+
+        # Reglas de entrada
+        if crossover(self.ema5, self.ema20) and self.rsi[-1] < 30:
             self.buy()
-        elif crossover(self.ma2, self.ma1):
+
+        # Reglas de salida
+        elif crossover(self.ema20, self.ema5) or self.rsi[-1] > 70:
             self.sell()
 
-# Función principal
+
+# ============================================================
+#   MAIN
+# ============================================================
 def main():
-    ticker = "GOOG"
+    ticker = "AAPL"
     df = get_data(ticker)
 
-    if df.empty or not all(col in df.columns for col in ['Open', 'High', 'Low', 'Close']):
-        print(f"❌ Error: Datos inválidos para {ticker}")
-        return
+    fgi_value, sentiment, timestamp = get_fear_greed()
 
-    vol = calculate_volatility(df)
-    print(f"{ticker}: Volatilidad anualizada = {vol:.2%}")
+    print(f"\n📊 FGI: {fgi_value} ({sentiment}) — {timestamp.strftime('%Y-%m-%d')}")
 
-    fgi = get_fear_greed()
-    sentiment, action = interpret_fgi(fgi["value"])
+    EmaRsiStrategy.fgi_value = fgi_value
 
-    print(f"\n📊 FGI: {fgi['value']} ({sentiment})")
-    print(f"💡 Strategy Suggestion: {action}\n")
+    bt = Backtest(df, EmaRsiStrategy,
+                  commission=0.002,
+                  exclusive_orders=True,
+                  finalize_trades=True)
 
-    SmaCross.fgi_value = fgi["value"]
-
-    bt = Backtest(df, SmaCross, commission=.002, exclusive_orders=True, finalize_trades=True)
     stats = bt.run()
 
-    html_file = f"backtest_{ticker}.html"
+    # Guardar gráfico en HTML
+    html_file = f"backtest_{ticker}_ema_rsi.html"
     output_file(html_file)
-    bt.plot(filename=html_file)
-    webbrowser.open(html_file)
+    save(bt.plot())
 
-    print(f"\n📈 Resultados del Backtest para {ticker}:")
-    print(f"🔁 Total Trades: {stats['# Trades']}")
-    print(f"📊 Retorno total: {stats['Return [%]']:.2f}%")
-    print(f"📉 Max Drawdown: {stats['Max. Drawdown [%]']:.2f}%")
-    print(f"📈 Mejor Trade: {stats['Best Trade [%]']:.2f}%")
-    print(f"📉 Peor Trade: {stats['Worst Trade [%]']:.2f}%")
-    print(f"⚖️ Ratio Sharpe: {stats['Sharpe Ratio']:.2f}")
-    print(f"✅ Ganadoras: {stats['Win Rate [%]']:.2f}%")
-    print("-" * 50)
+    print("\n📈 Resultados del Backtest:")
+    for key in ['# Trades', 'Return [%]', 'Max. Drawdown [%]', 'Sharpe Ratio', 'Win Rate [%]']:
+        print(f"{key}: {stats.get(key)}")
+
 
 if __name__ == "__main__":
     main()
