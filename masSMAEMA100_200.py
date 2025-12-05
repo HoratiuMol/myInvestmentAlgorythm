@@ -8,7 +8,7 @@ from backtesting.lib import crossover
 from bokeh.plotting import output_file, save
 
 # ============================================================
-#   DESCARGA DE DATOS (CORREGIDO PARA MULTIINDEX)
+#   DESCARGA DE DATOS
 # ============================================================
 def get_data(ticker="AAPL", period="1y", interval="1d"):
     df = yf.download(ticker, period=period, interval=interval)
@@ -25,18 +25,16 @@ def get_data(ticker="AAPL", period="1y", interval="1d"):
 #   INDICADORES (RSI Y EMA)
 # ============================================================
 def RSI(series, period=14):
-    series = pd.Series(series)  # Convertir a pandas Series
+    series = pd.Series(series)
     delta = series.diff()
-
     gain = delta.where(delta > 0, 0).rolling(period).mean()
     loss = -delta.where(delta < 0, 0).rolling(period).mean()
-
     rs = gain / loss
     return 100 - (100 / (1 + rs))
 
 
 def EMA(series, period):
-    series = pd.Series(series)  # Convertir a pandas Series
+    series = pd.Series(series)
     return series.ewm(span=period, adjust=False).mean()
 
 
@@ -46,9 +44,7 @@ def EMA(series, period):
 def get_fear_greed(api_url="https://api.alternative.me/fng/"):
     response = requests.get(api_url, params={"limit": 1})
     response.raise_for_status()
-
     latest = response.json()["data"][0]
-
     return int(latest["value"]), latest["value_classification"], datetime.fromtimestamp(int(latest["timestamp"]))
 
 
@@ -56,27 +52,21 @@ def get_fear_greed(api_url="https://api.alternative.me/fng/"):
 #   ESTRATEGIA: EMA 5/20 + RSI + FGI
 # ============================================================
 class EmaRsiStrategy(Strategy):
-    fgi_value = 0  # Filtro basado en sentimiento del mercado
+    fgi_value = 0
 
     def init(self):
         close = self.data.Close
-
-        # Indicadores CORRECTAMENTE definidos
         self.ema5 = self.I(EMA, close, 5)
         self.ema20 = self.I(EMA, close, 20)
         self.rsi = self.I(RSI, close, 14)
 
     def next(self):
-
-        # Filtro de sentimiento (evita operar si hay codicia fuerte)
         if self.fgi_value > 70:
             return
 
-        # Reglas de entrada
         if crossover(self.ema5, self.ema20) and self.rsi[-1] < 30:
             self.buy()
 
-        # Reglas de salida
         elif crossover(self.ema20, self.ema5) or self.rsi[-1] > 70:
             self.sell()
 
@@ -87,7 +77,6 @@ class EmaRsiStrategy(Strategy):
 def main():
     ticker = "AAPL"
     df = get_data(ticker)
-
     fgi_value, sentiment, timestamp = get_fear_greed()
 
     print(f"\n📊 FGI: {fgi_value} ({sentiment}) — {timestamp.strftime('%Y-%m-%d')}")
